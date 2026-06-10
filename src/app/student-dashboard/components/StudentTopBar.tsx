@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Bell, BookOpen, LogOut, Moon, Sun, Settings, CheckCircle2, UserCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSplash } from '@/contexts/SplashContext';
 import { getIstDateString, getIstNow } from '@/lib/utils/mealStatus';
 import { useDietPreference } from '@/hooks/useDietPreference';
 import { toast } from 'sonner';
@@ -17,31 +16,35 @@ interface StudentTopBarProps {
 export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarProps) {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { showSplash, setIsSplashVisible } = useSplash();
   const [showNotifs, setShowNotifs] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [streakCount, setStreakCount] = useState<number | null>(null);
   const [dbNotifications, setDbNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (signal?: AbortSignal) => {
     if (!user?.id) return;
     try {
-      const response = await fetch('/api/notifications');
-      if (response.ok) {
+      const response = await fetch('/api/notifications', { signal });
+      if (response.ok && !signal?.aborted) {
         const data = await response.json();
         setDbNotifications(data.rows || []);
         setUnreadCount(data.rows?.filter((n: any) => !n.is_read)?.length || 0);
       }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       console.log('Load notifications error:', err);
     }
   }, [user?.id]);
 
   useEffect(() => {
-    loadNotifications();
-    const id = setInterval(loadNotifications, 30000); // Poll every 30s
-    return () => clearInterval(id);
+    const controller = new AbortController();
+    loadNotifications(controller.signal);
+    const id = setInterval(() => loadNotifications(controller.signal), 30000); // Poll every 30s
+    return () => {
+      controller.abort();
+      clearInterval(id);
+    };
   }, [loadNotifications]);
 
   const markRead = async (id: string) => {
@@ -83,6 +86,7 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
     async function loadStreak() {
       if (!user?.id) {
@@ -95,8 +99,9 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
       try {
         let count = 0;
         for (let offset = 0; offset < 30; offset += 1) {
+          if (controller.signal.aborted) break;
           const date = getIstDateString(-offset);
-          const response = await fetch(`/api/meal-optins?date=${date}&studentId=${user.id}`);
+          const response = await fetch(`/api/meal-optins?date=${date}&studentId=${user.id}`, { signal: controller.signal });
           if (!response.ok) {
             break;
           }
@@ -110,11 +115,12 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
           count += 1;
         }
 
-        if (!cancelled) {
+        if (!cancelled && !controller.signal.aborted) {
           setStreakCount(count);
         }
-      } catch {
-        if (!cancelled) {
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        if (!cancelled && !controller.signal.aborted) {
           setStreakCount(0);
         }
       }
@@ -124,6 +130,7 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [user?.id]);
 
@@ -142,12 +149,10 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
   const streakLabel = streakCount === null ? '...' : `${streakCount} day${streakCount === 1 ? '' : 's'} streak`;
 
   const handleSignOut = async () => {
-    showSplash(); // Show splash screen immediately
-    await new Promise(resolve => setTimeout(resolve, 100)); // Wait a bit for it to render
-    await signOut(); // Sign out the user
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for full animation
-    setIsSplashVisible(false); // Hide splash screen
-    router.replace('/sign-up-login-screen'); // Redirect to login
+    // First navigate to login page immediately
+    router.replace('/sign-up-login-screen');
+    // Then clear auth state
+    await signOut();
     router.refresh();
   };
 

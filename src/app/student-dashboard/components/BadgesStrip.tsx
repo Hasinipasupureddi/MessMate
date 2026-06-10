@@ -64,7 +64,7 @@ export default function BadgesStrip() {
   const [hoveredBadgeId, setHoveredBadgeId] = useState<string | null>(null);
   const [pinnedBadgeId, setPinnedBadgeId] = useState<string | null>(null);
 
-  const loadBadges = useCallback(async () => {
+  const loadBadges = useCallback(async (signal?: AbortSignal) => {
     try {
       if (!user?.id) {
         setBadges(DEFAULT_BADGES);
@@ -80,8 +80,12 @@ export default function BadgesStrip() {
       const date = getIstDateString();
       let response: Response;
       try {
-        response = await fetch(`/api/student/badges?date=${date}`, { cache: 'no-store' });
-      } catch {
+        response = await fetch(`/api/student/badges?date=${date}`, { 
+          cache: 'no-store',
+          signal 
+        });
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         setBadges(DEFAULT_BADGES);
         setImpact([
           { value: '3.2kg', label: 'Food Saved' },
@@ -91,6 +95,8 @@ export default function BadgesStrip() {
         setSummary({ streakCount: 0, ratingCount: 0, voteCount: 0, leftoverClaimCount: 0 });
         return;
       }
+
+      if (signal?.aborted) return;
 
       const payload = (await response.json().catch(() => ({}))) as Partial<BadgeResponse>;
 
@@ -116,12 +122,13 @@ export default function BadgesStrip() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
     const refresh = async () => {
-      if (cancelled) {
+      if (cancelled || controller.signal.aborted) {
         return;
       }
-      await loadBadges();
+      await loadBadges(controller.signal);
     };
 
     void refresh();
@@ -141,9 +148,10 @@ export default function BadgesStrip() {
 
     return () => {
       cancelled = true;
+      controller.abort();
       window.clearInterval(intervalId);
       window.removeEventListener('focus', refresh);
-      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [loadBadges]);
 

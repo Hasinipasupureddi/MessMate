@@ -61,10 +61,10 @@ export default function EmojiRatingSection() {
     setWasteReports(w);
   }, [meals]);
 
-  const loadTodayMenu = useCallback(async () => {
+  const loadTodayMenu = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(`/api/live/final-menu?date=${today}`);
-      if (!response.ok) return;
+      const response = await fetch(`/api/live/final-menu?date=${today}`, { signal });
+      if (!response.ok || signal?.aborted) return;
       const data = await response.json();
       if (data?.rows && Array.isArray(data.rows)) {
         setMeals(prev => prev.map(m => {
@@ -89,14 +89,16 @@ export default function EmojiRatingSection() {
         }));
       }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       console.log('Load today menu error:', err);
     }
   }, [today]);
 
-  const loadMyRatings = useCallback(async () => {
+  const loadMyRatings = useCallback(async (signal?: AbortSignal) => {
     if (!user) return;
     try {
-      const response = await fetch(`/api/meal-ratings?date=${today}&studentId=${user.id}`);
+      const response = await fetch(`/api/meal-ratings?date=${today}&studentId=${user.id}`, { signal });
+      if (signal?.aborted) return;
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) { console.log('Load ratings error:', payload?.message || 'request failed'); return; }
 
@@ -116,16 +118,23 @@ export default function EmojiRatingSection() {
       setRatings(prev => ({ ...prev, ...ratingMap }));
       setWasteReports(prev => ({ ...prev, ...wasteMap }));
     } catch (err: any) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       console.log('Load ratings error:', err.message);
     }
   }, [user, today, meals]);
 
   useEffect(() => {
-    loadTodayMenu();
+    const controller = new AbortController();
+    loadTodayMenu(controller.signal);
+    
+    return () => controller.abort();
   }, [loadTodayMenu]);
 
   useEffect(() => {
-    loadMyRatings();
+    const controller = new AbortController();
+    loadMyRatings(controller.signal);
+
+    return () => controller.abort();
   }, [loadMyRatings]);
 
   const handleRate = async (mealId: string, value: number, emoji: string) => {

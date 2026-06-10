@@ -75,8 +75,11 @@ export default function ProfilePage() {
   }
 
   async function handleLogout() {
-    await signOut();
+    // First navigate to login page immediately
     router.replace('/sign-up-login-screen');
+    // Then clear auth state
+    await signOut();
+    router.refresh();
   }
 
   const roleLabel =

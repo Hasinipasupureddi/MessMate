@@ -52,11 +52,11 @@ export default function TodayMealCards() {
   const [loadingMeal, setLoadingMeal] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadMenuCards = useCallback(async () => {
+  const loadMenuCards = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(`/api/live/final-menu?date=${today}&pref=${dietPreference}`);
+      const response = await fetch(`/api/live/final-menu?date=${today}&pref=${dietPreference}`, { signal });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
+      if (!response.ok || signal?.aborted) {
         console.log('Load generated today menu error:', payload?.message || 'request failed');
         return;
       }
@@ -114,12 +114,13 @@ export default function TodayMealCards() {
         };
       }));
     } catch (error: any) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.log('Load generated today menu error:', error.message);
       setMealCards(fallbackMealCards);
     }
   }, [fallbackMealCards, today, dietPreference]);
 
-  const loadOptins = useCallback(async () => {
+  const loadOptins = useCallback(async (signal?: AbortSignal) => {
     if (!user?.id) {
       setMealStatuses({
         'meal-breakfast': null,
@@ -131,9 +132,9 @@ export default function TodayMealCards() {
     }
 
     try {
-      const response = await fetch(`/api/meal-optins?date=${today}&studentId=${user.id}`);
+      const response = await fetch(`/api/meal-optins?date=${today}&studentId=${user.id}`, { signal });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
+      if (!response.ok || signal?.aborted) {
         console.log('Load optins error:', payload?.message || 'request failed');
         return;
       }
@@ -169,15 +170,16 @@ export default function TodayMealCards() {
       setMealStatuses(statusMap);
       setPortions(portionMap);
     } catch (error: any) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.log('Load optins error:', error.message);
     }
   }, [today, user?.id]);
 
-  const loadOptinCounts = useCallback(async () => {
+  const loadOptinCounts = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(`/api/meal-optins?date=${today}`);
+      const response = await fetch(`/api/meal-optins?date=${today}`, { signal });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
+      if (!response.ok || signal?.aborted) {
         console.log('Load counts error:', payload?.message || 'request failed');
         return;
       }
@@ -198,6 +200,7 @@ export default function TodayMealCards() {
 
       setOptinCounts(counts);
     } catch (error: any) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.log('Load counts error:', error.message);
     }
   }, [
@@ -209,14 +212,19 @@ export default function TodayMealCards() {
   ]);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const signal = controller.signal;
 
     const refreshData = async () => {
       setIsLoading(true);
       try {
-        await Promise.all([loadMenuCards(), loadOptins(), loadOptinCounts()]);
+        await Promise.all([
+          loadMenuCards(signal),
+          loadOptins(signal),
+          loadOptinCounts(signal)
+        ]);
       } finally {
-        if (!cancelled) {
+        if (!signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -238,7 +246,7 @@ export default function TodayMealCards() {
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
-      cancelled = true;
+      controller.abort();
       window.clearInterval(id);
       window.removeEventListener('focus', refreshData);
       document.removeEventListener('visibilitychange', handleVisibility);

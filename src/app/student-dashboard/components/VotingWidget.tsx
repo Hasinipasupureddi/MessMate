@@ -39,12 +39,14 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const isEditingRef = useRef(false);
 
-  const loadVotes = useCallback(async () => {
+  const loadVotes = useCallback(async (signal?: AbortSignal) => {
     try {
       const [votesResponse, optionsResponse] = await Promise.all([
-        fetchWithRetry(`/api/meal-votes?date=${tomorrow}`, undefined, { retries: 2, backoffMs: 300, timeoutMs: 15000 }),
-        fetchWithRetry(`/api/vote-options?date=${tomorrow}`, undefined, { retries: 2, backoffMs: 300, timeoutMs: 15000 }),
+        fetchWithRetry(`/api/meal-votes?date=${tomorrow}`, { signal }, { retries: 2, backoffMs: 300, timeoutMs: 15000 }),
+        fetchWithRetry(`/api/vote-options?date=${tomorrow}`, { signal }, { retries: 2, backoffMs: 300, timeoutMs: 15000 }),
       ]);
+
+      if (signal?.aborted) return;
 
       const votesPayload = await votesResponse.json().catch(() => ({}));
       const optionsPayload = await optionsResponse.json().catch(() => ({}));
@@ -90,6 +92,7 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
         setSubmitted(false);
       }
     } catch (err: any) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       console.log('Load votes error:', err.message);
     } finally {
       setIsLoadingData(false);
@@ -200,13 +203,15 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
       .filter((bp) => bp.options.length > 0); // Only show blueprints that have relevant options
   }, [blueprints, dbOptions, dietPreference, tomorrowDate]);
 
-  const loadMyVotes = useCallback(async () => {
+  const loadMyVotes = useCallback(async (signal?: AbortSignal) => {
     if (!user?.id) {
       return;
     }
 
     try {
-      const response = await fetchWithRetry(`/api/meal-votes?date=${tomorrow}&studentId=${user.id}`, undefined, { retries: 2, backoffMs: 300, timeoutMs: 15000 });
+      const response = await fetchWithRetry(`/api/meal-votes?date=${tomorrow}&studentId=${user.id}`, { signal }, { retries: 2, backoffMs: 300, timeoutMs: 15000 });
+      
+      if (signal?.aborted) return;
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         console.log('Load my votes error:', payload?.message || 'request failed');
@@ -229,6 +234,7 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
 
       setSelectedVotes(nextVotes);
     } catch (err: any) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       console.log('Load my votes error:', err.message);
     }
   }, [tomorrow, user?.id]);
@@ -252,19 +258,19 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
   }, [blueprintsWithDbOptions, selectedVotes]);
 
   useEffect(() => {
-    void loadVotes();
-    void loadMyVotes();
-  }, [loadMyVotes, loadVotes]);
+    const controller = new AbortController();
+    void loadVotes(controller.signal);
+    void loadMyVotes(controller.signal);
 
-  useEffect(() => {
     const id = window.setInterval(() => {
-      void loadVotes();
+      void loadVotes(controller.signal);
     }, 60000);
 
     return () => {
+      controller.abort();
       window.clearInterval(id);
     };
-  }, [loadVotes]);
+  }, [loadMyVotes, loadVotes]);
 
   const handleVote = async (mealType: VoteMealType, categoryKey: string, optionId: string) => {
     if (!user?.id) {

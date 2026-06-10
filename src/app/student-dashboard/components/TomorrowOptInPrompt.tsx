@@ -46,13 +46,15 @@ export default function TomorrowOptInPrompt({ studentId }: TomorrowOptInPromptPr
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [statusLabel, setStatusLabel] = useState<'confirmed' | 'updated' | null>(null);
 
-  const checkStatus = useCallback(async () => {
+  const checkStatus = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [menuRes, optinRes] = await Promise.all([
-        fetch(`/api/live/final-menu?date=${tomorrow}`),
-        fetch(`/api/meal-optins?date=${tomorrow}&studentId=${studentId}`),
+        fetch(`/api/live/final-menu?date=${tomorrow}`, { signal }),
+        fetch(`/api/meal-optins?date=${tomorrow}&studentId=${studentId}`, { signal }),
       ]);
+
+      if (signal?.aborted) return;
 
       const menuData = await menuRes.json().catch(() => ({}));
       const optinData = await optinRes.json().catch(() => ({}));
@@ -88,6 +90,7 @@ export default function TomorrowOptInPrompt({ studentId }: TomorrowOptInPromptPr
         setStatusLabel('confirmed');
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error('Tomorrow attendance load failed:', error);
     } finally {
       setLoading(false);
@@ -95,16 +98,18 @@ export default function TomorrowOptInPrompt({ studentId }: TomorrowOptInPromptPr
   }, [studentId, statusLabel, tomorrow]);
 
   useEffect(() => {
-    void checkStatus();
+    const controller = new AbortController();
+    void checkStatus(controller.signal);
 
     const cleanupDashboardRefresh = subscribeSocketEvent(SOCKET_EVENTS.dashboardRefresh, () => {
-      void checkStatus();
+      void checkStatus(controller.signal);
     });
     const cleanupNotifications = subscribeSocketEvent(SOCKET_EVENTS.notificationsUpdated, () => {
-      void checkStatus();
+      void checkStatus(controller.signal);
     });
 
     return () => {
+      controller.abort();
       cleanupDashboardRefresh();
       cleanupNotifications();
     };

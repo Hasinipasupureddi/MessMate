@@ -132,7 +132,7 @@ function WeeklyMenuView() {
   const { user } = useAuth();
   const dietPreference = useMemo(() => normalizeDietPreference(user?.foodPreference), [user?.foodPreference]);
   
-  const today = getIstDateString(0);
+  const today = getIstDateString();
   const tomorrow = getIstDateString(1);
 
   const todayLabel = new Date(`${today}T00:00:00.000Z`).toLocaleDateString('en-IN', {
@@ -153,13 +153,15 @@ function WeeklyMenuView() {
   const [tomorrowMenu, setTomorrowMenu] = useState<{ status: string; meals: any[] }>({ status: 'awaiting_approval', meals: [] });
   const [loading, setLoading] = useState(true);
 
-  const loadMenuData = useCallback(async () => {
+  const loadMenuData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [todayRes, tomorrowRes] = await Promise.all([
-        fetch(`/api/live/final-menu?date=${today}&pref=${dietPreference}`),
-        fetch(`/api/live/final-menu?date=${tomorrow}&pref=${dietPreference}`),
+        fetch(`/api/live/final-menu?date=${today}&pref=${dietPreference}`, { signal }),
+        fetch(`/api/live/final-menu?date=${tomorrow}&pref=${dietPreference}`, { signal }),
       ]);
+
+      if (signal?.aborted) return;
 
       const todayPayload = await todayRes.json().catch(() => ({}));
       const tomorrowPayload = await tomorrowRes.json().catch(() => ({}));
@@ -178,6 +180,7 @@ function WeeklyMenuView() {
         cacheGeneratedMenuDay(tomorrowPayload.menu);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.log('Load menus error:', (error as Error).message);
     } finally {
       setLoading(false);
@@ -185,18 +188,19 @@ function WeeklyMenuView() {
   }, [today, tomorrow, dietPreference]);
 
   useEffect(() => {
-    loadMenuData();
-  }, [loadMenuData]);
+    const controller = new AbortController();
 
-  useEffect(() => {
+    loadMenuData(controller.signal);
+
     const cleanupRefresh = subscribeSocketEvent(SOCKET_EVENTS.dashboardRefresh, () => {
-      loadMenuData();
+      loadMenuData(controller.signal);
     });
     const cleanupNotifications = subscribeSocketEvent(SOCKET_EVENTS.notificationsUpdated, () => {
-      loadMenuData();
+      loadMenuData(controller.signal);
     });
 
     return () => {
+      controller.abort();
       cleanupRefresh();
       cleanupNotifications();
     };
@@ -322,9 +326,10 @@ function MealActivityView() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
     const loadHistory = async () => {
-      if (!user?.id) {
+      if (!user?.id || cancelled || controller.signal.aborted) {
         if (!cancelled) {
           setHistory([]);
           setLoading(false);
@@ -336,9 +341,11 @@ function MealActivityView() {
         const dates = Array.from({ length: 7 }, (_, index) => getIstDateString(-index));
 
         const [optinResponses, ratingResponses] = await Promise.all([
-          Promise.all(dates.map(date => fetch(`/api/meal-optins?date=${date}&studentId=${user.id}`))),
-          Promise.all(dates.map(date => fetch(`/api/meal-ratings?date=${date}&studentId=${user.id}`))),
+          Promise.all(dates.map(date => fetch(`/api/meal-optins?date=${date}&studentId=${user.id}`, { signal: controller.signal }))),
+          Promise.all(dates.map(date => fetch(`/api/meal-ratings?date=${date}&studentId=${user.id}`, { signal: controller.signal }))),
         ]);
+
+        if (controller.signal.aborted) return;
 
         const optinPayloads = await Promise.all(optinResponses.map(res => res.json().catch(() => ({ rows: [] }))));
         const ratingPayloads = await Promise.all(ratingResponses.map(res => res.json().catch(() => ({ rows: [] }))));
@@ -352,8 +359,8 @@ function MealActivityView() {
           const avgRating = ratings.length ? totalRating / ratings.length : 0;
 
           const summaryLabel = ratings.length
-            ? `⭐ ${avgRating.toFixed(1)}/5 average • ${attended.length} meals confirmed`
-            : `${attended.length} meals confirmed • ${skipped.length} skipped`;
+            ? `⭐ ${avgRating.toFixed(1)}/5 average · ${attended.length} meals confirmed`
+            : `${attended.length} meals confirmed · ${skipped.length} skipped`;
 
           return {
             date,
@@ -368,12 +375,13 @@ function MealActivityView() {
           };
         });
 
-        if (!cancelled) {
+        if (!cancelled && !controller.signal.aborted) {
           setHistory(nextHistory);
           setLoading(false);
         }
       } catch (error) {
-        if (!cancelled) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        if (!cancelled && !controller.signal.aborted) {
           setHistory([]);
           setLoading(false);
           console.log('Load history error:', (error as Error).message);
@@ -385,6 +393,7 @@ function MealActivityView() {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [user?.id, today]);
 

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, Bell, Download, RefreshCw, BookOpen, Settings, Monitor } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSplash } from '@/contexts/SplashContext';
 
 interface NotificationRow {
   id: string;
@@ -28,7 +27,6 @@ const DEFAULT_NOTIFICATIONS: NotificationRow[] = [
 export default function WardenTopBar({ onExportClick, onRefreshClick }: WardenTopBarProps) {
   const router = useRouter();
   const { signOut, user } = useAuth();
-  const { showSplash, setIsSplashVisible } = useSplash();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [dbNotifications, setDbNotifications] = useState<NotificationRow[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -36,15 +34,16 @@ export default function WardenTopBar({ onExportClick, onRefreshClick }: WardenTo
   const displayName = user?.name || 'Warden';
   const displayHostel = user?.hostelId || 'A';
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/notifications');
-      if (!response.ok) return;
+      const response = await fetch('/api/notifications', { signal });
+      if (!response.ok || signal?.aborted) return;
       const data = await response.json();
       const rows = Array.isArray(data.rows) ? data.rows : [];
       setDbNotifications(rows);
       setUnreadCount(rows.filter((n: NotificationRow) => !n.is_read).length);
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.log('Failed to load warden notifications:', error);
     }
   }, []);
@@ -70,9 +69,13 @@ export default function WardenTopBar({ onExportClick, onRefreshClick }: WardenTo
   };
 
   useEffect(() => {
-    loadNotifications();
-    const intervalId = window.setInterval(loadNotifications, 30000);
-    return () => window.clearInterval(intervalId);
+    const controller = new AbortController();
+    loadNotifications(controller.signal);
+    const intervalId = window.setInterval(() => loadNotifications(controller.signal), 30000);
+    return () => {
+      controller.abort();
+      window.clearInterval(intervalId);
+    };
   }, [loadNotifications]);
 
   useEffect(() => {
@@ -95,12 +98,10 @@ export default function WardenTopBar({ onExportClick, onRefreshClick }: WardenTo
   }, [notificationsOpen]);
 
   const handleSignOut = async () => {
-    showSplash(); // Show splash screen immediately
-    await new Promise(resolve => setTimeout(resolve, 100)); // Wait a bit for it to render
-    await signOut(); // Sign out the user
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for full animation
-    setIsSplashVisible(false); // Hide splash screen
-    router.replace('/sign-up-login-screen'); // Redirect to login
+    // First navigate to login page immediately
+    router.replace('/sign-up-login-screen');
+    // Then clear auth state
+    await signOut();
     router.refresh();
   };
 

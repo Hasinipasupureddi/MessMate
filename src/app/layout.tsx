@@ -2,8 +2,6 @@ import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import '../styles/tailwind.css';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { SplashProvider } from '@/contexts/SplashContext';
-import AppWrapper from '@/components/ui/AppWrapper';
 
 function shouldLoadRocketAnalytics(): boolean {
   const flag = process.env.NEXT_PUBLIC_ROCKET_ANALYTICS;
@@ -31,13 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans">
-        <SplashProvider>
-          <AuthProvider>
-            <AppWrapper>
-              {children}
-            </AppWrapper>
-          </AuthProvider>
-        </SplashProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
 
         {shouldLoadRocketAnalytics() ? (
           <>
