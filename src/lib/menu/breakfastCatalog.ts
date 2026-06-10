@@ -1,0 +1,28 @@
+import { type VoteOption } from './votingBlueprints';
+
+export const BREAKFAST_CATALOG: VoteOption[] = [
+  { id: 'B01', comboId: 'B01', label: 'Idli + Peanut Chutney + Sambar', emoji: '🍽️', items: ['Idli', 'Peanut Chutney', 'Sambar'], category: 'main', family: 'Idli Family', subFamilies: ['Idli', 'Sambar'] },
+  { id: 'B02', comboId: 'B02', label: 'Pesarattu + Ginger Chutney', emoji: '🟢', items: ['Pesarattu', 'Ginger Chutney'], category: 'main', family: 'Pesarattu Family', subFamilies: ['Pesarattu', 'Ginger'] },
+  { id: 'B03', comboId: 'B03', label: 'Upma + Peanut Chutney', emoji: '🥣', items: ['Upma', 'Peanut Chutney'], category: 'main', family: 'Upma Family', subFamilies: ['Upma', 'Peanut'] },
+  { id: 'B04', comboId: 'B04', label: 'Poori + Kurma', emoji: '🫓', items: ['Poori', 'Potato Kurma'], category: 'main', family: 'Poori Family', subFamilies: ['Poori', 'Potato'] },
+  { id: 'B05', comboId: 'B05', label: 'Masala Dosa + Coconut Chutney + Sambar', emoji: '🌯', items: ['Masala Dosa', 'Coconut Chutney', 'Sambar'], category: 'main', family: 'Dosa Family', subFamilies: ['Dosa', 'Sambar'] },
+  { id: 'B06', comboId: 'B06', label: 'Pongal + Kara Kurma', emoji: '🍚', items: ['Pongal', 'Kara Kurma'], category: 'main', family: 'Pongal Family', subFamilies: ['Pongal', 'Kara'] },
+  { id: 'B07', comboId: 'B07', label: 'Vada + Coconut Chutney + Sambar', emoji: '🧆', items: ['Vada', 'Coconut Chutney', 'Sambar'], category: 'main', family: 'Fried Breakfast Family', subFamilies: ['Vada', 'Sambar'] },
+  { id: 'B08', comboId: 'B08', label: 'Pulihora + Curd', emoji: '🍋', items: ['Pulihora', 'Curd'], category: 'main', family: 'Rice Family', subFamilies: ['Rice', 'Pulihora'] },
+  { id: 'B09', comboId: 'B09', label: 'Punugulu + Peanut Chutney', emoji: '🧆', items: ['Punugulu', 'Peanut Chutney'], category: 'main', family: 'Fried Breakfast Family', subFamilies: ['Punugulu', 'Peanut'] },
+  { id: 'B10', comboId: 'B10', label: 'Pesarattu Upma + Coconut Chutney', emoji: '🟢', items: ['Pesarattu', 'Upma', 'Coconut Chutney'], category: 'main', family: 'Pesarattu Family', subFamilies: ['Pesarattu', 'Upma'] },
+  { id: 'B11', comboId: 'B11', label: 'Vegetable Uttapam + Tomato Chutney', emoji: '🥞', items: ['Vegetable Uttapam', 'Tomato Chutney'], category: 'main', family: 'Dosa Family', subFamilies: ['Dosa', 'Uttapam'] },
+  { id: 'B12', comboId: 'B12', label: 'Rava Idli + Tomato Chutney', emoji: '🍽️', items: ['Rava Idli', 'Tomato Chutney'], category: 'main', family: 'Idli Family', subFamilies: ['Idli', 'Rava'] },
+  { id: 'B13', comboId: 'B13', label: 'Set Dosa + Coconut Chutney', emoji: '🥞', items: ['Set Dosa', 'Coconut Chutney'], category: 'main', family: 'Dosa Family', subFamilies: ['Dosa', 'SetDosa'] },
+  { id: 'B14', comboId: 'B14', label: 'Onion Dosa + Tomato Chutney', emoji: '🌯', items: ['Onion Dosa', 'Tomato Chutney'], category: 'main', family: 'Dosa Family', subFamilies: ['Dosa', 'Onion'] },
+  { id: 'B15', comboId: 'B15', label: 'Khara Bath + Coconut Chutney', emoji: '🥣', items: ['Khara Bath', 'Coconut Chutney'], category: 'main', family: 'Upma Family', subFamilies: ['Upma', 'KharaBath'] },
+  { id: 'B16', comboId: 'B16', label: 'Chapathi + Kurma', emoji: '🫓', items: ['Chapathi', 'Kurma'], category: 'main', family: 'Chapathi Family', subFamilies: ['Chapathi', 'Kurma'] },
+  { id: 'B17', comboId: 'B17', label: 'Tomato Bath + Raita', emoji: '🍅', items: ['Tomato Bath', 'Raita'], category: 'main', family: 'Rice Family', subFamilies: ['Rice', 'TomatoBath'] },
+  { id: 'B18', comboId: 'B18', label: 'Lemon Rice + Boondi', emoji: '🍋', items: ['Lemon Rice', 'Boondi'], category: 'main', family: 'Rice Family', subFamilies: ['Rice', 'LemonRice'] },
+  { id: 'B19', comboId: 'B19', label: 'Bisibele Bath', emoji: '🍚', items: ['Bisibele Bath'], category: 'main', family: 'Rice Family', subFamilies: ['Rice', 'BisibeleBath'] },
+  { id: 'B20', comboId: 'B20', label: 'Vegetable Upma + Chutney', emoji: '🥦', items: ['Vegetable Upma', 'Chutney'], category: 'main', family: 'Upma Family', subFamilies: ['Upma', 'VegUpma'] },
+  { id: 'B21', comboId: 'B21', label: 'Mysore Bonda + Coconut Chutney', emoji: '🧆', items: ['Mysore Bonda', 'Coconut Chutney'], category: 'main', family: 'Fried Breakfast Family', subFamilies: ['Bonda', 'Mysore'] },
+  { id: 'B22', comboId: 'B22', label: 'Mini Idli + Sambar', emoji: '🍽️', items: ['Mini Idli', 'Sambar'], category: 'main', family: 'Idli Family', subFamilies: ['Idli', 'Mini'] },
+  { id: 'B23', comboId: 'B23', label: 'Plain Dosa + Peanut Chutney', emoji: '🌯', items: ['Plain Dosa', 'Peanut Chutney'], category: 'main', family: 'Dosa Family', subFamilies: ['Dosa', 'Plain'] },
+  { id: 'B24', comboId: 'B24', label: 'Ravva Dosa + Coconut Chutney', emoji: '🥞', items: ['Ravva Dosa', 'Coconut Chutney'], category: 'main', family: 'Dosa Family', subFamilies: ['Dosa', 'Ravva'] },
+];
