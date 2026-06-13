@@ -13,7 +13,7 @@ import LeftoverClaimSection from './LeftoverClaim';
 import ComplaintBox from './ComplaintBox';
 import BadgesStrip from './BadgesStrip';
 import StudentBottomNav from './StudentBottomBar';
-import { getIstDateString } from '@/lib/utils/mealStatus';
+import { formatIstDateLabel, getIstDateString } from '@/lib/utils/mealStatus';
 import { normalizeDietPreference } from '@/lib/menu/masterMenu';
 import { joinRoleRoom, leaveRoleRoom, subscribeSocketEvent, SOCKET_EVENTS } from '@/lib/socket/client';
 import { cacheGeneratedMenuDay } from '@/lib/menu/generatedMenuCache';
@@ -135,18 +135,16 @@ function WeeklyMenuView() {
   const today = getIstDateString();
   const tomorrow = getIstDateString(1);
 
-  const todayLabel = new Date(`${today}T00:00:00.000Z`).toLocaleDateString('en-IN', {
+  const todayLabel = formatIstDateLabel(new Date(`${today}T00:00:00.000Z`), {
     weekday: 'long',
     day: 'numeric',
     month: 'short',
-    timeZone: 'UTC',
   });
 
-  const tomorrowLabel = new Date(`${tomorrow}T00:00:00.000Z`).toLocaleDateString('en-IN', {
+  const tomorrowLabel = formatIstDateLabel(new Date(`${tomorrow}T00:00:00.000Z`), {
     weekday: 'long',
     day: 'numeric',
     month: 'short',
-    timeZone: 'UTC',
   });
 
   const [todayMenu, setTodayMenu] = useState<{ status: string; meals: any[] }>({ status: 'approved', meals: [] });
@@ -207,7 +205,7 @@ function WeeklyMenuView() {
   }, [loadMenuData]);
 
   const renderMenuSection = (title: string, dateLabel: string, menuData: { status: string; meals: any[] }) => {
-    const isToday = dateLabel.includes(new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+    const isToday = dateLabel.includes(formatIstDateLabel(new Date(), { day: 'numeric', month: 'short' }));
     const isApproved = menuData.status === 'approved' || isToday;
     const hasMeals = menuData.meals.length > 0;
 
@@ -364,7 +362,7 @@ function MealActivityView() {
 
           return {
             date,
-            label: date === today ? 'Today' : date === getIstDateString(-1) ? 'Yesterday' : new Date(`${date}T00:00:00.000Z`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }),
+            label: date === today ? 'Today' : date === getIstDateString(-1) ? 'Yesterday' : formatIstDateLabel(new Date(`${date}T00:00:00.000Z`), { weekday: 'short', day: 'numeric', month: 'short' }),
             subtitle: ratings.length ? `${ratings.length} ratings submitted` : 'No ratings yet',
             summaryLabel,
             optins,

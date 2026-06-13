@@ -22,12 +22,13 @@ const formatUpdatedAt = (updatedAt?: string | null) => {
   if (!updatedAt) return '';
   const date = new Date(`${updatedAt}Z`);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleString('en-IN', {
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
     day: 'numeric',
     month: 'short',
     hour: 'numeric',
     minute: '2-digit',
-  });
+  }).format(date);
 };
 
 export default function TomorrowOptInPrompt({ studentId }: TomorrowOptInPromptProps) {

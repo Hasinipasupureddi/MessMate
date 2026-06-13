@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Bell, BookOpen, LogOut, Moon, Sun, Settings, CheckCircle2, UserCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getIstDateString, getIstNow } from '@/lib/utils/mealStatus';
+import { formatIstDateLabel, getIstDateString, getIstNow } from '@/lib/utils/mealStatus';
 import { useDietPreference } from '@/hooks/useDietPreference';
 import { toast } from 'sonner';
 
@@ -141,7 +141,7 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
 
   const displayName = user?.name || 'Student';
   const roomLabel = user ? `Hostel ${user.hostelId}` : 'Hostel A';
-  const todayLabel = getIstNow().toLocaleDateString('en-IN', {
+  const todayLabel = formatIstDateLabel(getIstNow(), {
     weekday: 'long',
     day: 'numeric',
     month: 'short',
@@ -226,7 +226,7 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
                           <div className="flex items-start justify-between gap-3 mb-2">
                             <div>
                               <p className="font-bold text-[11px] uppercase tracking-wider text-indigo-300">{n?.title || 'Notice'}</p>
-                              <p className="text-[10px] mt-1 opacity-70 text-white/70">{new Date(n.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                              <p className="text-[10px] mt-1 opacity-70 text-white/70">{new Date(n.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
                             {!n?.is_read && (
                               <button

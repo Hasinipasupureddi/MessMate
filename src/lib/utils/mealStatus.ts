@@ -11,6 +11,7 @@ type MealTiming = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const IST_TIMEZONE = 'Asia/Kolkata';
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 const MEAL_TIMINGS: Record<MealType, MealTiming> = {
@@ -46,8 +47,6 @@ const MEAL_TIMINGS: Record<MealType, MealTiming> = {
 
 export function getIstNow(offsetDays = 0): Date {
   const now = new Date();
-  // now.getTime() is always UTC. 
-  // We add IST_OFFSET_MS to get a "fake UTC" date where getUTC* methods return IST values.
   const istMillis = now.getTime() + IST_OFFSET_MS + offsetDays * DAY_MS;
   return new Date(istMillis);
 }
@@ -66,6 +65,22 @@ export function getIstTimeLabel(date = getIstNow()): string {
   const hour12 = hours % 12 || 12;
   const suffix = hours >= 12 ? 'PM' : 'AM';
   return `${hour12}:${minutes} ${suffix}`;
+}
+
+export function formatIstDateLabel(
+  date: Date | string = getIstNow(),
+  options: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  },
+): string {
+  const resolvedDate = typeof date === 'string' ? new Date(date) : date;
+
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'UTC',
+    ...options,
+  }).format(resolvedDate);
 }
 
 export function getMealTiming(mealType: MealType) {

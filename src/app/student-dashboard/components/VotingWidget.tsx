@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner';
 import { TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getIstDateString } from '@/lib/utils/mealStatus';
+import { formatIstDateLabel, getIstDateString } from '@/lib/utils/mealStatus';
 import { fetchWithRetry } from '@/lib/utils/fetchWithRetry';
 import { useDietPreference } from '@/hooks/useDietPreference';
 import { getVoteBlueprintsForDate, type VoteMealType } from '@/lib/menu/votingBlueprints';
@@ -21,11 +21,10 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
   const tomorrow = getIstDateString(1);
   const tomorrowDate = useMemo(() => new Date(`${tomorrow}T00:00:00.000Z`), [tomorrow]);
   const blueprints = useMemo(() => getVoteBlueprintsForDate(tomorrowDate), [tomorrowDate]);
-  const tomorrowLabel = tomorrowDate.toLocaleDateString('en-IN', {
+  const tomorrowLabel = formatIstDateLabel(tomorrowDate, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-    timeZone: 'UTC',
   });
 
   const [selectedVotes, setSelectedVotes] = useState<Record<string, string[]>>({});
