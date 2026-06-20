@@ -235,19 +235,19 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <div className="relative z-10 space-y-4 xl:space-y-5">
-          <div>
-            <h2 className="text-3xl xl:text-[2.1rem] font-bold text-white leading-tight mb-2.5">
+        <div className="relative z-10 space-y-6 xl:space-y-7 mt-2">
+          <div className="space-y-3.5">
+            <h2 className="text-3xl xl:text-[2.2rem] font-bold text-white leading-tight">
               Smarter meals,
-            <br />
-            <span className="text-cyan-300">simple access.</span>
-          </h2>
-          <p className="text-white/75 text-[0.96rem] xl:text-[1.03rem] leading-relaxed max-w-md">
-            Direct role-based registration for seamless hostel mess operations.
-          </p>
-        </div>
+              <br />
+              <span className="text-cyan-300">simple access.</span>
+            </h2>
+            <p className="text-white/75 text-[0.96rem] xl:text-[1.03rem] leading-relaxed max-w-md">
+              Direct role-based registration for seamless hostel mess operations.
+            </p>
+          </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {FEATURES.map((item, index) => (
               <div key={`feature-${index}`} className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-[0.85rem] bg-white/15 flex items-center justify-center text-white flex-shrink-0">
@@ -256,6 +256,28 @@ export default function AuthPage() {
                 <span className="text-white/85 text-[0.96rem] font-medium">{item.text}</span>
               </div>
             ))}
+          </div>
+
+          {/* Quick Stats Card */}
+          <div className="glass-card border border-white/10 bg-white/5 p-4 max-w-md rounded-2xl space-y-3 shadow-xl mt-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs uppercase tracking-wider text-cyan-300 font-semibold">Live System Stats</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2.5 text-center">
+              <div className="p-2.5 rounded-xl bg-white/4 border border-white/5">
+                <div className="text-lg font-black text-white">38%</div>
+                <div className="text-[10px] text-white/50">Waste Cut</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/4 border border-white/5">
+                <div className="text-lg font-black text-white">4.8★</div>
+                <div className="text-[10px] text-white/50">Satisfaction</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/4 border border-white/5">
+                <div className="text-lg font-black text-white">92%</div>
+                <div className="text-[10px] text-white/50">Opt-in Rate</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -491,7 +513,7 @@ export default function AuthPage() {
                   </>
                 ) : (
                   <>
-                    <span>Sign In as {ROLE_CONFIG[activeRole].label}</span>
+                    <span>Sign In</span>
                     <ArrowRight size={16} />
                   </>
                 )}

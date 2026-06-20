@@ -15,6 +15,7 @@ import {
 import { getTodayMenu } from '@/lib/menu/masterMenu';
 import { cacheGeneratedMenuDay } from '@/lib/menu/generatedMenuCache';
 import { useDietPreference } from '@/hooks/useDietPreference';
+import { getMessMateSocket, SOCKET_EVENTS } from '@/lib/socket/client';
 
 type OptInStatus = 'attending' | 'skip' | 'takeaway' | null;
 type PortionSize = 'half' | 'full' | 'extra';
@@ -281,6 +282,8 @@ export default function TodayMealCards() {
       }
 
       setMealStatuses((prev) => ({ ...prev, [mealId]: status }));
+      getMessMateSocket().emit(SOCKET_EVENTS.dashboardRefresh);
+      getMessMateSocket().emit(SOCKET_EVENTS.mealOptinsUpdated);
       const labels: Record<Exclude<OptInStatus, null>, string> = {
         attending: "You're confirmed for this meal! 🎉",
         skip: "Meal skipped. We'll adjust the count.",
@@ -397,8 +400,8 @@ export default function TodayMealCards() {
                   </span>
                 ))}
                 {(meal as any).votes > 0 && (
-                  <span className="text-[10px] px-2.5 py-1 rounded-lg bg-indigo-500/30 text-indigo-200 border border-indigo-500/50 flex items-center gap-1.5 font-black shadow-[0_0_12px_rgba(99,102,241,0.25)] animate-in fade-in zoom-in-95 duration-500">
-                    <span className="relative flex h-2 w-2">
+                  <span className="today-meal-highlight-badge text-[10px] px-2.5 py-1 rounded-lg bg-indigo-500/30 text-indigo-200 border border-indigo-500/50 flex items-center gap-1.5 font-black shadow-[0_0_12px_rgba(99,102,241,0.25)] animate-in fade-in zoom-in-95 duration-500">
+                    <span className="today-meal-highlight-dot relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                     </span>
@@ -436,8 +439,8 @@ export default function TodayMealCards() {
                         <button
                           key={`${meal.id}-portion-${size}`}
                           onClick={() => handlePortion(meal.id, size)}
-                          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
-                            portion === size ? 'bg-indigo-500/25 border-indigo-500/50 text-indigo-300' : 'bg-white/4 border-white/8 text-white/50 hover:bg-white/8'
+                          className={`today-meal-option flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                            portion === size ? 'today-meal-option-selected bg-indigo-500/25 border-indigo-500/50 text-indigo-300' : 'bg-white/4 border-white/8 text-white/50 hover:bg-white/8'
                           }`}
                         >
                           {size === 'half' ? '½ Half' : size === 'full' ? '◉ Full' : '+ Extra'}

@@ -45,25 +45,27 @@ export default function EmojiRatingSection() {
   const today = getIstDateString();
 
   const [meals, setMeals] = useState<MealToRate[]>(MEALS_TO_RATE);
-  const [ratings, setRatings] = useState<Record<string, number | null>>({});
-  const [wasteReports, setWasteReports] = useState<Record<string, string | null>>({});
+  const [ratings, setRatings] = useState<Record<string, number | null>>(() =>
+    MEALS_TO_RATE.reduce<Record<string, number | null>>((accumulator, meal) => {
+      accumulator[meal.id] = null;
+      return accumulator;
+    }, {})
+  );
+  const [wasteReports, setWasteReports] = useState<Record<string, string | null>>(() =>
+    MEALS_TO_RATE.reduce<Record<string, string | null>>((accumulator, meal) => {
+      accumulator[meal.id] = null;
+      return accumulator;
+    }, {})
+  );
   const [savingRating, setSavingRating] = useState<string | null>(null);
-
-  // Initialize state based on meals
-  useEffect(() => {
-    const r: Record<string, number | null> = {};
-    const w: Record<string, string | null> = {};
-    meals.forEach(m => {
-      r[m.id] = null;
-      w[m.id] = null;
-    });
-    setRatings(r);
-    setWasteReports(w);
-  }, [meals]);
+  const [isLoadingRatings, setIsLoadingRatings] = useState(true);
 
   const loadTodayMenu = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(`/api/live/final-menu?date=${today}`, { signal });
+      const response = await fetch(`/api/live/final-menu?date=${today}&t=${Date.now()}`, { 
+        signal,
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      });
       if (!response.ok || signal?.aborted) return;
       const data = await response.json();
       if (data?.rows && Array.isArray(data.rows)) {
@@ -97,16 +99,20 @@ export default function EmojiRatingSection() {
   const loadMyRatings = useCallback(async (signal?: AbortSignal) => {
     if (!user) return;
     try {
-      const response = await fetch(`/api/meal-ratings?date=${today}&studentId=${user.id}`, { signal });
+      setIsLoadingRatings(true);
+      const response = await fetch(`/api/meal-ratings?date=${today}&studentId=${user.id}&t=${Date.now()}`, { 
+        signal,
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      });
       if (signal?.aborted) return;
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) { console.log('Load ratings error:', payload?.message || 'request failed'); return; }
+      if (!response.ok) { console.log('Load ratings error:', payload?.message || 'request failed'); setIsLoadingRatings(false); return; }
 
       const ratingMap: Record<string, number | null> = {};
       const wasteMap: Record<string, string | null> = {};
-      meals.forEach(m => {
-        ratingMap[m.id] = null;
-        wasteMap[m.id] = null;
+      MEALS_TO_RATE.forEach(meal => {
+        ratingMap[meal.id] = null;
+        wasteMap[meal.id] = null;
       });
 
       (payload?.rows ?? []).forEach((row: any) => {
@@ -120,8 +126,10 @@ export default function EmojiRatingSection() {
     } catch (err: any) {
       if (err instanceof Error && err.name === 'AbortError') return;
       console.log('Load ratings error:', err.message);
+    } finally {
+      setIsLoadingRatings(false);
     }
-  }, [user, today, meals]);
+  }, [user, today]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -255,8 +263,8 @@ export default function EmojiRatingSection() {
                   <button
                     key={`${meal.id}-emoji-${e.value}`}
                     onClick={() => handleRate(meal.id, e.value, e.emoji)}
-                    disabled={isSaving}
-                    className={`emoji-btn min-w-0 disabled:opacity-60 ${currentRating === e.value ? 'selected' : ''}`}
+                    disabled={isSaving || isLoadingRatings || currentRating !== null}
+                    className={`emoji-btn min-w-0 disabled:opacity-60 disabled:cursor-not-allowed ${currentRating === e.value ? 'selected' : ''}`}
                   >
                     <span className="text-2xl">{e.emoji}</span>
                     <span className="text-xs text-white/60">{e.label}</span>
@@ -277,7 +285,8 @@ export default function EmojiRatingSection() {
                     <button
                       key={`${meal.id}-waste-${w.id}`}
                       onClick={() => handleWaste(meal.id, w.value)}
-                      className={`flex-1 py-1.5 text-xs rounded-lg border transition-all ${
+                      disabled={isSaving || isLoadingRatings}
+                      className={`flex-1 py-1.5 text-xs rounded-lg border transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
                         currentWaste === w.value
                           ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'bg-white/3 border-white/8 text-white/55 hover:bg-white/6'
                       }`}

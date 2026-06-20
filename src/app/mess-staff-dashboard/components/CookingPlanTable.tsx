@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { CheckCircle2, Clock, ChefHat } from 'lucide-react';
 import { getIstDateString } from '@/lib/utils/mealStatus';
+import { subscribeSocketEvent, SOCKET_EVENTS } from '@/lib/socket/client';
 
 interface CookingTask {
   id: string;
@@ -105,6 +106,18 @@ export default function CookingPlanTable() {
 
   useEffect(() => {
     void loadTasks();
+
+    const refreshTasks = () => {
+      void loadTasks();
+    };
+
+    const cleanupDashboardRefresh = subscribeSocketEvent(SOCKET_EVENTS.dashboardRefresh, refreshTasks);
+    const cleanupMealOptinsUpdated = subscribeSocketEvent(SOCKET_EVENTS.mealOptinsUpdated, refreshTasks);
+
+    return () => {
+      cleanupDashboardRefresh();
+      cleanupMealOptinsUpdated();
+    };
   }, [today, loadTasks]);
 
   const updateStatus = async (id: string, newStatus: CookingTask['status']) => {

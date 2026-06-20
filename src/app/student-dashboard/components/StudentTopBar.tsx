@@ -134,11 +134,6 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
     };
   }, [user?.id]);
 
-  const notificationsToDisplay = dbNotifications.length > 0 ? dbNotifications : [
-    { id: 'notif-001', title: 'Welcome!', message: 'Voting for tomorrow\'s breakfast is now open!', created_at: new Date().toISOString(), is_read: false },
-    { id: 'notif-002', title: 'Leftovers', message: 'Extra Gulab Jamun available — claim now!', created_at: new Date().toISOString(), is_read: false },
-  ];
-
   const displayName = user?.name || 'Student';
   const roomLabel = user ? `Hostel ${user.hostelId}` : 'Hostel A';
   const todayLabel = formatIstDateLabel(getIstNow(), {
@@ -218,7 +213,9 @@ export default function StudentTopBar({ theme, onToggleTheme }: StudentTopBarPro
                       <span className="text-xs font-medium text-cyan-300">{unreadCount} unread</span>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
-                      {notificationsToDisplay?.map(n => (
+                      {dbNotifications.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-[hsl(var(--student-muted))]">No new notifications</div>
+                      ) : dbNotifications.map(n => (
                         <div
                           key={n?.id}
                           className={`p-3 rounded-xl text-sm border transition-all ${!n?.is_read ? 'bg-indigo-500/14 border-indigo-500/30' : 'bg-white/5 border-white/10'}`}

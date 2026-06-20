@@ -60,6 +60,20 @@
     --student-border: rgba(87, 107, 156, 0.16);
     --student-text: rgba(20, 30, 46, 0.96);
     --student-muted: rgba(72, 90, 120, 0.86);
+    --background: 214 100% 97%;
+    --foreground: 220 35% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 35% 14%;
+    --border: 217 28% 82%;
+    --input: 217 28% 90%;
+    --secondary: 214 32% 92%;
+    --muted: 217 30% 93%;
+    --muted-foreground: 217 18% 38%;
+    --accent: 197 88% 48%;
+    --accent-foreground: 222 47% 11%;
+    --success: 152 69% 35%;
+    --warning: 38 92% 40%;
+    color: hsl(var(--foreground));
   }
 }
 
@@ -247,6 +261,25 @@
   .student-theme-light [class*="text-amber-200"],
   .student-theme-light [class*="text-amber-400"] {
     color: #b45309 !important;
+  }
+
+  .student-theme-light .today-meal-highlight-badge {
+    background: rgba(79, 70, 229, 0.14) !important;
+    border-color: rgba(79, 70, 229, 0.3) !important;
+    color: #1e3a8a !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35) inset !important;
+  }
+
+  .student-theme-light .today-meal-highlight-badge .today-meal-highlight-dot [class*="bg-indigo-500"] {
+    background: #4338ca !important;
+  }
+
+  .student-theme-light .today-meal-option-selected {
+    background: rgba(79, 70, 229, 0.12) !important;
+    border-color: rgba(79, 70, 229, 0.34) !important;
+    color: #1e3a8a !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35) inset !important;
   }
 
   .student-theme-light .student-notification-panel {

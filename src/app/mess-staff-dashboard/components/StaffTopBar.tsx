@@ -13,11 +13,6 @@ interface NotificationRow {
   created_at: string;
 }
 
-const DEFAULT_NOTIFICATIONS: NotificationRow[] = [
-  { id: 'notif-001', title: 'Complaints', message: '2 complaints need review', is_read: false, created_at: new Date().toISOString() },
-  { id: 'notif-002', title: 'Snack', message: 'Snack window is now open', is_read: false, created_at: new Date().toISOString() },
-];
-
 type StaffTopBarProps = {
   onTodayPlanClick?: () => void;
   onRefreshClick?: () => void;
@@ -206,7 +201,9 @@ export default function StaffTopBar({ onTodayPlanClick, onRefreshClick }: StaffT
                 <span className="text-xs font-medium text-cyan-300">{unreadCount} unread</span>
               </div>
               <div className="max-h-[280px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
-                {(dbNotifications.length > 0 ? dbNotifications : DEFAULT_NOTIFICATIONS).map((n) => (
+                {dbNotifications.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-white/50">No new notifications</div>
+                ) : dbNotifications.map((n) => (
                   <div
                     key={n.id}
                     className={`w-full rounded-xl px-3 py-2 border transition-all ${!n.is_read ? 'bg-indigo-500/14 border-indigo-500/30' : 'bg-white/5 border-white/8'}`}

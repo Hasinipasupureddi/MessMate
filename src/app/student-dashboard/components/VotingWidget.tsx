@@ -8,6 +8,7 @@ import { formatIstDateLabel, getIstDateString } from '@/lib/utils/mealStatus';
 import { fetchWithRetry } from '@/lib/utils/fetchWithRetry';
 import { useDietPreference } from '@/hooks/useDietPreference';
 import { getVoteBlueprintsForDate, type VoteMealType } from '@/lib/menu/votingBlueprints';
+import { subscribeSocketEvent, SOCKET_EVENTS } from '@/lib/socket/client';
 
 type VoteCounts = Record<string, Record<string, Record<string, number>>>;
 
@@ -261,6 +262,14 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
     void loadVotes(controller.signal);
     void loadMyVotes(controller.signal);
 
+    const refreshVoteData = () => {
+      void loadVotes();
+      void loadMyVotes();
+    };
+
+    const cleanupDashboardRefresh = subscribeSocketEvent(SOCKET_EVENTS.dashboardRefresh, refreshVoteData);
+    const cleanupMealOptinsUpdated = subscribeSocketEvent(SOCKET_EVENTS.mealOptinsUpdated, refreshVoteData);
+
     const id = window.setInterval(() => {
       void loadVotes(controller.signal);
     }, 60000);
@@ -268,6 +277,8 @@ export default function VotingWidget({ expanded = false }: VotingWidgetProps) {
     return () => {
       controller.abort();
       window.clearInterval(id);
+      cleanupDashboardRefresh();
+      cleanupMealOptinsUpdated();
     };
   }, [loadMyVotes, loadVotes]);
 

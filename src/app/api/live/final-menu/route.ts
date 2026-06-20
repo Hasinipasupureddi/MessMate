@@ -5,6 +5,8 @@ import { buildFinalMenuFromVotes, generateAndSaveFinalMenu, getFinalMenuRows, hy
 import { normalizeDietPreference } from '@/lib/menu/masterMenu';
 import type { FinalMenuMeal, VoteAggregateRow } from '@/lib/menu/finalMenu';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);

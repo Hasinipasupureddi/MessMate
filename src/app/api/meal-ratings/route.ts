@@ -3,6 +3,9 @@ import { getIstDateString } from '@/lib/utils/mealStatus';
 import { requireRole } from '@/lib/auth/guards';
 import { getRatings, saveRating, updateRating, getDishRatingAggregates, getDailyRatingTrend, getMealTypeRatingAverages, normalizeDishName } from '@/lib/api/mealRatingsMySQL';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   const auth = await requireRole(request, ['student', 'staff', 'warden']);
   if (!auth.ok) {
@@ -53,7 +56,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ rows: [] });
     }
 
-    return NextResponse.json({ rows: await getRatings(studentId, date) });
+    const rows = await getRatings(studentId, date);
+    console.log('GET /api/meal-ratings returned:', rows, 'for student:', studentId, 'date:', date);
+
+    return NextResponse.json({ rows });
   } catch (error) {
     return NextResponse.json({ message: (error as Error).message }, { status: 500 });
   }

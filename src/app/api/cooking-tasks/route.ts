@@ -2,8 +2,9 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getCookingTasksByDate, createCookingTask, uiCookingStatus } from '@/lib/api/cookingTasksMySQL';
 import { requireRole } from '@/lib/auth/guards';
 import { getIstDateString } from '@/lib/utils/mealStatus';
-import { getFinalMenuRows, hydrateFinalMenuDay, getTotalStudentCount } from '@/lib/api/finalMenuMySQL';
+import { getFinalMenuRows, hydrateFinalMenuDay, getTotalStudentCount, generateAndSaveFinalMenu } from '@/lib/api/finalMenuMySQL';
 import { getMealCountsByDate } from '@/lib/api/mealOptinsMySQL';
+import { getVotes } from '@/lib/api/mealVotesMySQL';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,8 +16,16 @@ export async function GET(request: NextRequest) {
     let rows = await getCookingTasksByDate(taskDate);
 
     if (rows.length === 0) {
+      let savedMenuRows = await getFinalMenuRows(taskDate);
+      
+      // Auto-generate menu if it wasn't finalized yet
+      if (savedMenuRows.length === 0) {
+        const votesRaw = await getVotes(taskDate);
+        await generateAndSaveFinalMenu(taskDate, (votesRaw as any).rows, 'approved');
+        savedMenuRows = await getFinalMenuRows(taskDate);
+      }
+
       // Dynamically generate tasks from finalized menu if we have one
-      const savedMenuRows = await getFinalMenuRows(taskDate);
       if (savedMenuRows.length > 0) {
         const menu = hydrateFinalMenuDay(taskDate, savedMenuRows);
         const optinCounts = await getMealCountsByDate(taskDate);
@@ -45,15 +54,21 @@ export async function GET(request: NextRequest) {
             const assignedTo = chefs[chefIdx % chefs.length];
             chefIdx++;
 
-            await createCookingTask({
-              taskDate,
-              mealType: meal.mealType,
-              taskName: dish,
-              status: 'pending',
-              assignedTo,
-              portions,
-              notes: meal.winningItems.some(item => (item.label || '').includes(dish)) ? 'Voted #1 today' : undefined,
-            });
+            // Prevent duplicate tasks by checking DB directly (fixes concurrent request race conditions)
+            const currentTasks = await getCookingTasksByDate(taskDate);
+            const existingTask = currentTasks.find(r => r.meal_type === meal.mealType && r.task_name === dish);
+            
+            if (!existingTask) {
+              await createCookingTask({
+                taskDate,
+                mealType: meal.mealType,
+                taskName: dish,
+                status: 'pending',
+                assignedTo,
+                portions,
+                notes: meal.winningItems.some(item => (item.label || '').includes(dish)) ? 'Voted #1 today' : undefined,
+              });
+            }
           }
         }
         // Refetch rows

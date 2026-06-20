@@ -19,7 +19,13 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const compareStudentId = url.searchParams.get('compareStudentId')?.trim();
 
-  const dbUser = await findUserByEmail(session.email);
+  let dbUser = null;
+  try {
+    dbUser = await findUserByEmail(session.email);
+  } catch (error) {
+    console.warn('[messmate][auth/session] Falling back to token claims after profile lookup failed.', error);
+  }
+
   if (dbUser && dbUser.id === session.sub) {
     const claimsChanged =
       dbUser.rollNo !== session.rollNo ||

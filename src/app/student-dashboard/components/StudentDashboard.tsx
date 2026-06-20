@@ -23,12 +23,14 @@ export default function StudentDashboardClient() {
   const { user, reloadCurrentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'home' | 'menu' | 'vote' | 'history'>('home');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [hasSyncedSession, setHasSyncedSession] = useState(false);
 
   useEffect(() => {
     // Refresh session on dashboard mount only when we already have a user.
     // This avoids clearing client auth state during a sign-in redirect when the cookie may not be attached yet.
     const syncSession = async () => {
-      if (user && typeof reloadCurrentUser === 'function') {
+      if (user && typeof reloadCurrentUser === 'function' && !hasSyncedSession) {
+        setHasSyncedSession(true);
         await reloadCurrentUser();
       }
     };
@@ -38,7 +40,7 @@ export default function StudentDashboardClient() {
     if (savedTheme === 'dark' || savedTheme === 'light') {
       setTheme(savedTheme);
     }
-  }, [user, reloadCurrentUser]);
+  }, [user, reloadCurrentUser, hasSyncedSession]);
 
   useEffect(() => {
     window.localStorage.setItem('student-dashboard-theme', theme);

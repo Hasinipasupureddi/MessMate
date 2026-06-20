@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, ChevronRight, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { getIstDateString } from '@/lib/utils/mealStatus';
-import { subscribeSocketEvent, SOCKET_EVENTS } from '@/lib/socket/client';
+import { getMessMateSocket, subscribeSocketEvent, SOCKET_EVENTS } from '@/lib/socket/client';
 
 type MealSlotName = 'breakfast' | 'lunch' | 'snack' | 'dinner';
 
@@ -154,6 +154,8 @@ export default function TomorrowOptInPrompt({ studentId }: TomorrowOptInPromptPr
       setEditing(false);
       setStatusLabel(hasSavedAttendance ? 'updated' : 'confirmed');
       toast.success(hasSavedAttendance ? 'Attendance updated' : 'Attendance confirmed');
+      getMessMateSocket().emit(SOCKET_EVENTS.dashboardRefresh);
+      getMessMateSocket().emit(SOCKET_EVENTS.mealOptinsUpdated);
       void checkStatus();
     } catch (error) {
       console.error('Save attendance failed:', error);
