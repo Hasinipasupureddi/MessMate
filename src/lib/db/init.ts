@@ -151,6 +151,23 @@ export async function ensureMysqlSchema(): Promise<void> {
       MODIFY COLUMN meal_type ENUM('breakfast', 'lunch', 'snack', 'dinner') NOT NULL
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS meal_ratings (
+        id VARCHAR(64) NOT NULL PRIMARY KEY,
+        student_id VARCHAR(64) NOT NULL,
+        rating_date DATE NOT NULL,
+        meal_type ENUM('breakfast', 'lunch', 'snack', 'dinner') NULL,
+        dish_name VARCHAR(255) NULL,
+        rating INT NOT NULL,
+        waste_amount VARCHAR(32) NOT NULL DEFAULT 'none',
+        feedback TEXT NULL,
+        leftover_feedback BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_meal_rating (student_id, rating_date, meal_type)
+      )
+    `);
+
     await runMealSchemaMigrations(pool);
 
     await pool.query(`
@@ -338,23 +355,6 @@ export async function ensureMysqlSchema(): Promise<void> {
 
     // Update meal_type enum for menu_rotation
     await pool.query(`ALTER TABLE menu_rotation MODIFY COLUMN meal_type ENUM('breakfast', 'lunch', 'snack', 'dinner') NOT NULL`);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS meal_ratings (
-        id VARCHAR(64) NOT NULL PRIMARY KEY,
-        student_id VARCHAR(64) NOT NULL,
-        rating_date DATE NOT NULL,
-        meal_type ENUM('breakfast', 'lunch', 'snack', 'dinner') NULL,
-        dish_name VARCHAR(255) NULL,
-        rating INT NOT NULL,
-        waste_amount VARCHAR(32) NOT NULL DEFAULT 'none',
-        feedback TEXT NULL,
-        leftover_feedback BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY uk_meal_rating (student_id, rating_date, meal_type)
-      )
-    `);
 
     await pool.query(`ALTER TABLE meal_ratings MODIFY COLUMN meal_type ENUM('breakfast', 'lunch', 'snack', 'dinner') NULL`);
 

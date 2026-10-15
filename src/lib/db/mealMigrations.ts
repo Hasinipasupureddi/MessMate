@@ -88,6 +88,25 @@ export async function runMealSchemaMigrations(pool: Pool): Promise<void> {
     `);
   }
 
+  // A fresh database may not have this table yet. Create the base table before
+  // attempting column-by-column upgrades below.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS meal_ratings (
+      id VARCHAR(64) NOT NULL PRIMARY KEY,
+      student_id VARCHAR(64) NOT NULL,
+      rating_date DATE NOT NULL,
+      meal_type ENUM('breakfast', 'lunch', 'snack', 'dinner') NULL,
+      dish_name VARCHAR(255) NULL,
+      rating INT NOT NULL,
+      waste_amount VARCHAR(32) NOT NULL DEFAULT 'none',
+      feedback TEXT NULL,
+      leftover_feedback BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_meal_rating (student_id, rating_date, meal_type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+
   if (!(await columnExists(pool, 'meal_ratings', 'meal_type'))) {
     await pool.query(`ALTER TABLE meal_ratings ADD COLUMN meal_type ENUM('breakfast', 'lunch', 'dinner') NULL AFTER rating_date`);
   }
