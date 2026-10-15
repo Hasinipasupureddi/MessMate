@@ -17,6 +17,8 @@ function buildPool(): Pool {
     namedPlaceholders: true,
     dateStrings: true,
     timezone: '+05:30', // Set MySQL connection to IST timezone!
+    // TiDB Cloud public endpoints require TLS. Enable with MYSQL_SSL=true.
+    ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: true } : undefined,
     // Fail fast when MySQL is down or misconfigured (default wait can be very long).
     connectTimeout: Number(process.env.MYSQL_CONNECT_TIMEOUT_MS || 12_000),
     enableKeepAlive: true,
